@@ -1,0 +1,267 @@
+:root {
+  --bg: #0f172a;
+  --panel: #1e293b;
+  --panel-2: #273549;
+  --border: #334155;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
+  --danger: #ef4444;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-weight: 500;
+}
+.btn:hover {
+  background: var(--accent-hover);
+}
+.btn.secondary {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+}
+.btn.danger {
+  background: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.input,
+select.input {
+  width: 100%;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text);
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.auth-wrap {
+  max-width: 380px;
+  margin: 8vh auto;
+  padding: 28px;
+}
+
+.field {
+  margin-bottom: 14px;
+}
+.field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin: 8px 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.badge {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+/* Editor layout */
+.editor-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+.editor-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.editor-pane,
+.preview-pane {
+  min-height: 0;
+  overflow: auto;
+}
+.preview-pane {
+  background: white;
+  color: #111;
+  padding: 20px;
+}
+
+/* Draggable splitter (only shown in split mode) */
+.gutter {
+  flex: 0 0 6px;
+  cursor: col-resize;
+  background: var(--border);
+  transition: background 0.15s;
+}
+.gutter:hover {
+  background: var(--accent);
+}
+.editor-body.dragging {
+  cursor: col-resize;
+  user-select: none;
+}
+/* While dragging, keep the iframe from swallowing mouse events */
+.editor-body.dragging iframe {
+  pointer-events: none;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.modal {
+  width: 100%;
+  max-width: 440px;
+}
+
+/* GrapesJS visual editor host (Design mode) */
+.gjs-host {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+.gjs-wrap {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+/* Segmented view-mode control */
+.mode-group {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.mode-group .seg {
+  background: var(--panel-2);
+  color: var(--muted);
+  border: none;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+.mode-group .seg + .seg {
+  border-left: 1px solid var(--border);
+}
+.mode-group .seg.active {
+  background: var(--accent);
+  color: white;
+}
+.preview-pane.markdown-body {
+  padding: 24px 32px;
+  line-height: 1.6;
+}
+.preview-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: white;
+}
+.cm-editor {
+  height: 100%;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  flex-wrap: wrap;
+}
+.title-input {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 600;
+  flex: 1;
+  min-width: 160px;
+}
+.title-input:focus {
+  outline: none;
+}
+.spacer {
+  flex: 1;
+}
+.save-state {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
