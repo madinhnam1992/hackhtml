@@ -41,14 +41,22 @@ function escapeText(s: string): string {
   return s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c] as string));
 }
 
-/** Inject a <title> into an existing HTML document (used for the suggested PDF filename). */
-function injectTitle(htmlDoc: string, title: string): string {
-  const titleTag = `<title>${escapeText(title)}</title>`;
+/**
+ * Print-only safety net for user HTML. `backdrop-filter` is rendered as an opaque black box by
+ * headless Chromium's PDF path (with backgrounds on), so neutralize it for print only — it can't
+ * sample a live backdrop in a static PDF anyway. Screen rendering is unaffected.
+ */
+const PRINT_SAFETY_CSS =
+  "@media print{*,*::before,*::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;}}";
+
+/** Inject a <title> (for the suggested filename) and the print safety CSS into an HTML document. */
+function injectHead(htmlDoc: string, title: string): string {
+  const head = `<title>${escapeText(title)}</title><style>${PRINT_SAFETY_CSS}</style>`;
   if (/<head[^>]*>/i.test(htmlDoc)) {
-    return htmlDoc.replace(/<head[^>]*>/i, (m) => `${m}${titleTag}`);
+    return htmlDoc.replace(/<head[^>]*>/i, (m) => `${m}${head}`);
   }
   // No <head>: wrap whatever we have into a minimal document.
-  return `<!doctype html><html><head><meta charset="utf-8">${titleTag}</head><body>${htmlDoc}</body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8">${head}</head><body>${htmlDoc}</body></html>`;
 }
 
 export function buildPrintDocument(
@@ -57,7 +65,7 @@ export function buildPrintDocument(
   contentType: ContentType
 ): string {
   if (contentType === "HTML") {
-    return injectTitle(content || "<p></p>", title);
+    return injectHead(content || "<p></p>", title);
   }
   // Markdown: render the same sanitized output the preview shows, then wrap with print CSS.
   const body = renderToStaticMarkup(
