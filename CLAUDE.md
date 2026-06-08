@@ -100,6 +100,11 @@ Next.js App Router. Routes in `app/`: `dashboard/`, `editor/[id]/`, `s/[slug]/` 
   `document/PdfService.java` (pooled renderers cap concurrency; private-IP requests are blocked as an
   SSRF guard); config under `app.pdf.*`; the backend Docker image installs Chromium. If the server
   render fails, `exportToPdf` falls back to the old hidden-iframe `window.print()` path.
+  - Two print gotchas the pipeline handles: `buildPrintDocument` injects print-only CSS that disables
+    `backdrop-filter` (headless Chromium paints it as a black box with backgrounds on); and because the
+    preview iframe is opaque-origin (no `allow-same-origin`), a postMessage bridge appended to its
+    `srcDoc` in `Preview.tsx` lets the PDF path capture runtime root classes/lang (e.g. a language
+    toggle that only sets a `<body>` class) so the PDF matches what's on screen.
 - **Export menu** (`components/ExportMenu.tsx`, used by the editor and the public viewer) gathers all
   the ways out: download raw source (`.html`/`.md`), download rendered HTML (Markdown only, via
   `buildPrintDocument`), and Export PDF. Plain file downloads are client-only — `lib/download.ts`

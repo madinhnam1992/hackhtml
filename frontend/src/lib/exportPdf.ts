@@ -116,10 +116,73 @@ export function exportToPdf(opts: {
   iframe.srcdoc = html;
 }
 
+interface DocState {
+  bodyClass?: string;
+  htmlClass?: string;
+  lang?: string;
+}
+
+/**
+ * Ask the live preview iframe (via the bridge in Preview.tsx) for its current root classes/lang, so
+ * runtime state like a language toggle (which only sets a `<body>` class) carries into the PDF.
+ * Returns null if there's no preview, the bridge doesn't answer, or we're off the browser.
+ */
+function captureLivePreviewState(): Promise<DocState | null> {
+  if (typeof window === "undefined" || typeof document === "undefined") return Promise.resolve(null);
+  const iframe = document.querySelector("iframe.preview-iframe") as HTMLIFrameElement | null;
+  const win = iframe?.contentWindow;
+  if (!win) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (v: DocState | null) => {
+      if (settled) return;
+      settled = true;
+      window.removeEventListener("message", onMessage);
+      resolve(v);
+    };
+    function onMessage(e: MessageEvent) {
+      if (e.source === win && e.data && e.data.__hackhtml_state__) {
+        finish({ bodyClass: e.data.bodyClass, htmlClass: e.data.htmlClass, lang: e.data.lang });
+      }
+    }
+    window.addEventListener("message", onMessage);
+    try {
+      win.postMessage("__hackhtml_get_state__", "*");
+    } catch {
+      finish(null);
+    }
+    setTimeout(() => finish(null), 300);
+  });
+}
+
+/** Set or replace an attribute on an element's opening tag (first match), escaping the value. */
+function setTagAttr(html: string, tag: string, attr: string, value: string): string {
+  const openRe = new RegExp(`<${tag}\\b[^>]*>`, "i");
+  const match = html.match(openRe);
+  if (!match) return html; // fragment without this tag — nothing to do
+  const safe = value.replace(/"/g, "&quot;");
+  const attrRe = new RegExp(`\\s${attr}\\s*=\\s*("[^"]*"|'[^']*'|[^\\s>]+)`, "i");
+  const tagStr = attrRe.test(match[0])
+    ? match[0].replace(attrRe, ` ${attr}="${safe}"`)
+    : match[0].replace(new RegExp(`<${tag}\\b`, "i"), `<${tag} ${attr}="${safe}"`);
+  return html.replace(openRe, tagStr);
+}
+
+/** Apply captured runtime state (root classes/lang) onto the stored HTML before rendering. */
+function applyDocState(html: string, state: DocState | null): string {
+  if (!state) return html;
+  let out = html;
+  if (state.bodyClass !== undefined) out = setTagAttr(out, "body", "class", state.bodyClass);
+  if (state.htmlClass) out = setTagAttr(out, "html", "class", state.htmlClass);
+  if (state.lang) out = setTagAttr(out, "html", "lang", state.lang);
+  return out;
+}
+
 /**
  * Export to PDF via the backend (headless Chromium) so the file has our own page-number footer.
- * Builds the same print-ready HTML as the native path and POSTs it. If the server render fails
- * (e.g. PDF disabled or busy), falls back to the browser print dialog so export still works.
+ * Builds the same print-ready HTML as the native path and POSTs it. For HTML it first captures the
+ * preview's runtime state (e.g. selected language) so the PDF matches what's on screen. If the
+ * server render fails (e.g. PDF disabled or busy), falls back to the browser print dialog.
  */
 export async function exportToPdfViaServer(opts: {
   title: string;
@@ -128,7 +191,11 @@ export async function exportToPdfViaServer(opts: {
   target: { kind: "doc"; id: string } | { kind: "public"; slug: string };
 }): Promise<void> {
   const title = (opts.title || "document").trim() || "document";
-  const html = buildPrintDocument(title, opts.content, opts.contentType);
+  let content = opts.content;
+  if (opts.contentType === "HTML") {
+    content = applyDocState(content, await captureLivePreviewState());
+  }
+  const html = buildPrintDocument(title, content, opts.contentType);
   try {
     const blob =
       opts.target.kind === "doc"
@@ -137,6 +204,6 @@ export async function exportToPdfViaServer(opts: {
     downloadBlob(blob, `${title}.pdf`);
   } catch (err) {
     console.warn("Server PDF export failed, falling back to browser print", err);
-    exportToPdf({ title, content: opts.content, contentType: opts.contentType });
+    exportToPdf({ title, content, contentType: opts.contentType });
   }
 }
