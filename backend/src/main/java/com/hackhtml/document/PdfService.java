@@ -61,7 +61,7 @@ public class PdfService {
                   <td style="padding:0 12mm 6px;text-align:left;font-weight:600;letter-spacing:.04em;\
             white-space:nowrap;overflow:hidden;">NTQ Korea</td>
                   <td style="padding:0 0 6px;text-align:center;color:#53627a;font-size:8px;\
-            white-space:nowrap;overflow:hidden;">AI Sales Agent — MVP Proposal</td>
+            white-space:nowrap;overflow:hidden;">AI Sales Agent — MVP Proposal v1.0</td>
                   <td style="padding:0 12mm 6px;text-align:right;color:#0A2C5E;font-weight:600;\
             letter-spacing:.04em;white-space:nowrap;overflow:hidden;">POINT</td>
                 </tr>
@@ -77,7 +77,7 @@ public class PdfService {
                   <td style="padding:5px 12mm 0;text-align:left;white-space:nowrap;overflow:hidden;">\
             © 2026 NTQ Korea · All rights reserved.</td>
                   <td style="padding:5px 0 0;text-align:center;font-weight:600;letter-spacing:.1em;\
-            color:#b03a2e;white-space:nowrap;overflow:hidden;">CONFIDENTIAL</td>
+            white-space:nowrap;overflow:hidden;">CONFIDENTIAL</td>
                   <td style="padding:5px 12mm 0;text-align:right;white-space:nowrap;overflow:hidden;">\
             <span class="pageNumber"></span> / <span class="totalPages"></span></td>
                 </tr>
