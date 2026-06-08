@@ -1,14 +1,19 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import Preview from "@/components/Preview";
-import { ContentType } from "./api";
+import { api, ContentType } from "./api";
+import { downloadBlob } from "./download";
 
 /**
- * Export a document to PDF using the browser's native print-to-PDF.
+ * Export a document to PDF.
  *
- * Highest fidelity (the browser's own engine renders the CSS, incl. flexbox/grid from GrapesJS)
- * with selectable text and no extra dependencies. We render into a hidden iframe and call its
- * print() so it doesn't trip popup blockers.
+ * Preferred path: the frontend builds the print-ready HTML here (so Markdown renders exactly like
+ * the on-screen preview) and POSTs it to the backend, which uses headless Chromium to produce a
+ * PDF with a page-number footer the browser print dialog can't give us — see exportToPdfViaServer.
+ *
+ * Fallback path (exportToPdf): the browser's native print-to-PDF. Highest fidelity with selectable
+ * text and no server round-trip, but the header/footer is controlled by the browser, not us. We
+ * render into a hidden iframe and call its print() so it doesn't trip popup blockers.
  */
 
 const MARKDOWN_PRINT_CSS = `
@@ -46,7 +51,7 @@ function injectTitle(htmlDoc: string, title: string): string {
   return `<!doctype html><html><head><meta charset="utf-8">${titleTag}</head><body>${htmlDoc}</body></html>`;
 }
 
-function buildPrintDocument(
+export function buildPrintDocument(
   title: string,
   content: string,
   contentType: ContentType
@@ -101,4 +106,29 @@ export function exportToPdf(opts: {
 
   document.body.appendChild(iframe);
   iframe.srcdoc = html;
+}
+
+/**
+ * Export to PDF via the backend (headless Chromium) so the file has our own page-number footer.
+ * Builds the same print-ready HTML as the native path and POSTs it. If the server render fails
+ * (e.g. PDF disabled or busy), falls back to the browser print dialog so export still works.
+ */
+export async function exportToPdfViaServer(opts: {
+  title: string;
+  content: string;
+  contentType: ContentType;
+  target: { kind: "doc"; id: string } | { kind: "public"; slug: string };
+}): Promise<void> {
+  const title = (opts.title || "document").trim() || "document";
+  const html = buildPrintDocument(title, opts.content, opts.contentType);
+  try {
+    const blob =
+      opts.target.kind === "doc"
+        ? await api.generateDocumentPdf(opts.target.id, html, title)
+        : await api.generatePublicPdf(opts.target.slug, html, title);
+    downloadBlob(blob, `${title}.pdf`);
+  } catch (err) {
+    console.warn("Server PDF export failed, falling back to browser print", err);
+    exportToPdf({ title, content: opts.content, contentType: opts.contentType });
+  }
 }

@@ -3,6 +3,7 @@ package com.hackhtml.document;
 import com.hackhtml.common.ApiException;
 import com.hackhtml.dto.DocumentDtos.CreateRequest;
 import com.hackhtml.dto.DocumentDtos.Detail;
+import com.hackhtml.dto.DocumentDtos.PdfRequest;
 import com.hackhtml.dto.DocumentDtos.ShareRequest;
 import com.hackhtml.dto.DocumentDtos.Summary;
 import com.hackhtml.dto.DocumentDtos.UpdateContentRequest;
@@ -26,9 +27,11 @@ import java.util.List;
 public class DocumentController {
 
     private final DocumentService service;
+    private final PdfService pdfService;
 
-    public DocumentController(DocumentService service) {
+    public DocumentController(DocumentService service, PdfService pdfService) {
         this.service = service;
+        this.pdfService = pdfService;
     }
 
     @GetMapping
@@ -78,6 +81,15 @@ public class DocumentController {
         requireAuth(userId);
         Document doc = service.share(id, userId, req.visibility());
         return Detail.from(doc, service.readContent(doc), true);
+    }
+
+    @PostMapping("/{id}/pdf")
+    public ResponseEntity<byte[]> pdf(@AuthenticationPrincipal String userId,
+                                      @PathVariable String id,
+                                      @RequestBody PdfRequest req) {
+        requireAuth(userId);
+        service.getForView(id, userId); // authorize via canView
+        return pdfService.renderResponse(req.html(), req.title());
     }
 
     @DeleteMapping("/{id}")

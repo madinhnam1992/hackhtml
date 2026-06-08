@@ -17,6 +17,9 @@ public final class DocumentDtos {
 
     public record ShareRequest(@NotNull Document.Visibility visibility) {}
 
+    /** Print-ready HTML (rendered by the frontend) to turn into a PDF, plus a suggested filename. */
+    public record PdfRequest(String html, String title) {}
+
     /** Lightweight projection for list views (no MinIO fetch). */
     public record Summary(
             String id, String title, Document.ContentType contentType,

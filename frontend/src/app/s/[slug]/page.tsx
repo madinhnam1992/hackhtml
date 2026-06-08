@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Preview from "@/components/Preview";
+import ExportMenu from "@/components/ExportMenu";
 import { useAuth } from "@/lib/auth";
 import { api, DocumentDetail } from "@/lib/api";
 
@@ -49,20 +50,12 @@ export default function PublicViewPage() {
         ) : (
           <span className="badge">Read-only</span>
         )}
-        <button
-          className="btn secondary"
-          onClick={async () => {
-            const { exportToPdf } = await import("@/lib/exportPdf");
-            exportToPdf({
-              title: doc.title || "document",
-              content: doc.content,
-              contentType: doc.contentType,
-            });
-          }}
-          title="Export to PDF (via browser print)"
-        >
-          Export PDF
-        </button>
+        <ExportMenu
+          title={doc.title || "document"}
+          content={doc.content}
+          contentType={doc.contentType}
+          target={{ kind: "public", slug }}
+        />
       </div>
       <div style={{ flex: 1, minHeight: 0, background: "white" }}>
         <Preview content={doc.content} contentType={doc.contentType} />

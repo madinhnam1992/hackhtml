@@ -93,8 +93,18 @@ Next.js App Router. Routes in `app/`: `dashboard/`, `editor/[id]/`, `s/[slug]/` 
   does the round-trip: `splitHtmlDoc` (stored string → parts), `combineHtmlDoc` (parts → stored
   string), `formatHtml` (js-beautify pretty-print before storing). Switching through Design therefore
   normalizes HTML formatting — expected, not a bug.
-- **Export to PDF** (`lib/exportPdf.ts`) renders into a hidden iframe and opens the browser print
-  dialog; no PDF library.
+- **Export to PDF** (`lib/exportPdf.ts`): the frontend builds the print-ready HTML (`buildPrintDocument`,
+  so Markdown renders exactly like `Preview.tsx`) and POSTs it to the backend, which uses headless
+  Chromium (Playwright) to produce a PDF with a page-number footer — `POST /api/documents/{id}/pdf`
+  (auth) or `POST /api/public/{slug}/pdf` (gated by a real share). The backend choke point is
+  `document/PdfService.java` (pooled renderers cap concurrency; private-IP requests are blocked as an
+  SSRF guard); config under `app.pdf.*`; the backend Docker image installs Chromium. If the server
+  render fails, `exportToPdf` falls back to the old hidden-iframe `window.print()` path.
+- **Export menu** (`components/ExportMenu.tsx`, used by the editor and the public viewer) gathers all
+  the ways out: download raw source (`.html`/`.md`), download rendered HTML (Markdown only, via
+  `buildPrintDocument`), and Export PDF. Plain file downloads are client-only — `lib/download.ts`
+  (`downloadBlob`/`downloadText`/`sourceFile`) builds a Blob from the already-loaded content; no
+  backend round-trip.
 
 ## Conventions worth matching
 

@@ -7,6 +7,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { html } from "@codemirror/lang-html";
 import { markdown } from "@codemirror/lang-markdown";
 import Preview from "./Preview";
+import ExportMenu from "./ExportMenu";
 import type { DragMode } from "./GrapesEditor";
 import { api, DocumentDetail, Visibility } from "@/lib/api";
 
@@ -114,11 +115,6 @@ export default function Editor({ initial }: { initial: DocumentDetail }) {
     setShareSlug(updated.shareSlug);
   }
 
-  const handleExportPdf = useCallback(async () => {
-    const { exportToPdf } = await import("@/lib/exportPdf");
-    exportToPdf({ title, content, contentType: initial.contentType });
-  }, [title, content, initial.contentType]);
-
   const handleFormat = useCallback(async () => {
     const { formatHtml } = await import("@/lib/htmlDoc");
     const formatted = formatHtml(content);
@@ -209,13 +205,12 @@ export default function Editor({ initial }: { initial: DocumentDetail }) {
             Format
           </button>
         )}
-        <button
-          className="btn secondary"
-          onClick={handleExportPdf}
-          title="Export to PDF (via browser print)"
-        >
-          Export PDF
-        </button>
+        <ExportMenu
+          title={title}
+          content={content}
+          contentType={initial.contentType}
+          target={{ kind: "doc", id: initial.id }}
+        />
         <select
           className="input"
           style={{ width: "auto" }}

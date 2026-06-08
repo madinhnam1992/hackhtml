@@ -11,11 +11,13 @@ public class AppProperties {
     private final Jwt jwt = new Jwt();
     private final Minio minio = new Minio();
     private final OAuth2 oauth2 = new OAuth2();
+    private final Pdf pdf = new Pdf();
     private String frontendUrl = "http://localhost:3000";
 
     public Jwt getJwt() { return jwt; }
     public Minio getMinio() { return minio; }
     public OAuth2 getOauth2() { return oauth2; }
+    public Pdf getPdf() { return pdf; }
     public String getFrontendUrl() { return frontendUrl; }
     public void setFrontendUrl(String frontendUrl) { this.frontendUrl = frontendUrl; }
 
@@ -43,6 +45,27 @@ public class AppProperties {
         public void setSecretKey(String secretKey) { this.secretKey = secretKey; }
         public String getBucket() { return bucket; }
         public void setBucket(String bucket) { this.bucket = bucket; }
+    }
+
+    /** Server-side PDF rendering (headless Chromium via Playwright). */
+    public static class Pdf {
+        /** When false, the PDF endpoints return 503 (use when Chromium is unavailable). */
+        private boolean enabled = true;
+        /** Number of pooled Chromium renderers; also caps concurrent renders. */
+        private int poolSize = 2;
+        /** Max accepted HTML payload size in bytes. */
+        private int maxHtmlBytes = 5 * 1024 * 1024;
+        /** Per-render timeout in milliseconds (content load + pdf). */
+        private long timeoutMs = 15_000L;
+
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        public int getPoolSize() { return poolSize; }
+        public void setPoolSize(int poolSize) { this.poolSize = poolSize; }
+        public int getMaxHtmlBytes() { return maxHtmlBytes; }
+        public void setMaxHtmlBytes(int maxHtmlBytes) { this.maxHtmlBytes = maxHtmlBytes; }
+        public long getTimeoutMs() { return timeoutMs; }
+        public void setTimeoutMs(long timeoutMs) { this.timeoutMs = timeoutMs; }
     }
 
     public static class OAuth2 {

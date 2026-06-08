@@ -79,6 +79,31 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return data as T;
 }
 
+/** Like request(), but for endpoints that return a binary body (e.g. application/pdf). */
+async function requestBlob(path: string, body: unknown): Promise<Blob> {
+  const token = getToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    let message = res.statusText || "Request failed";
+    try {
+      message = (text ? JSON.parse(text)?.message : null) || message;
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new ApiError(res.status, message);
+  }
+  return res.blob();
+}
+
 export const api = {
   register: (email: string, password: string, displayName: string) =>
     request<{ token: string; user: UserResponse }>("/api/auth/register", {
@@ -127,6 +152,12 @@ export const api = {
 
   getPublic: (slug: string) =>
     request<DocumentDetail>(`/api/public/${slug}`),
+
+  generateDocumentPdf: (id: string, html: string, title: string) =>
+    requestBlob(`/api/documents/${id}/pdf`, { html, title }),
+
+  generatePublicPdf: (slug: string, html: string, title: string) =>
+    requestBlob(`/api/public/${slug}/pdf`, { html, title }),
 };
 
 export { ApiError };
