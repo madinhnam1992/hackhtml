@@ -47,10 +47,44 @@ public class PdfService {
 
     private static final Logger log = LoggerFactory.getLogger(PdfService.class);
 
-    /** Centered "page / total". Header/footer templates need inline styles to render. */
-    private static final String FOOTER_TEMPLATE =
-            "<div style=\"font-size:10px;width:100%;text-align:center;color:#666;\">"
-            + "<span class=\"pageNumber\"></span> / <span class=\"totalPages\"></span></div>";
+    // Header/footer templates run in an isolated context: external CSS/JS don't apply, the default
+    // font-size is 0, and Chromium drops `background-color` when printing the margin boxes — so every
+    // style is inline and solid fills use the `box-shadow: inset 0 0 0 ... ` trick (which Chromium
+    // *does* paint) instead of `background`. A table gives reliable 3-column layout in this context.
+
+    /** Full-bleed navy bar: NTQ Korea (left) · proposal title (center, muted) · red CONFIDENTIAL badge (right). */
+    private static final String HEADER_TEMPLATE = """
+            <div style="font-size:9px;width:100%;font-family:'Segoe UI',Arial,sans-serif;\
+            -webkit-print-color-adjust:exact;print-color-adjust:exact;">
+              <table style="width:100%;border-collapse:collapse;box-shadow:inset 0 0 0 100px #0A2C5E;\
+            -webkit-print-color-adjust:exact;print-color-adjust:exact;">
+                <tr>
+                  <td style="padding:6px 12mm;text-align:left;color:#fff;font-weight:600;\
+            letter-spacing:.04em;white-space:nowrap;">NTQ Korea</td>
+                  <td style="padding:6px 0;text-align:center;color:rgba(255,255,255,.72);font-size:8px;">\
+            AI Sales Agent — MVP Proposal · POINT</td>
+                  <td style="padding:6px 12mm;text-align:right;white-space:nowrap;"><span \
+            style="box-shadow:inset 0 0 0 100px #b03a2e;-webkit-print-color-adjust:exact;\
+            print-color-adjust:exact;color:#fff;font-size:7.5px;font-weight:700;letter-spacing:.08em;\
+            padding:2px 8px;border-radius:999px;">CONFIDENTIAL</span></td>
+                </tr>
+              </table>
+            </div>""";
+
+    /** Copyright (left) · CONFIDENTIAL (center, red) · version (right), above a hairline rule. */
+    private static final String FOOTER_TEMPLATE = """
+            <div style="font-size:8px;width:100%;font-family:'Segoe UI',Arial,sans-serif;color:#53627a;\
+            -webkit-print-color-adjust:exact;print-color-adjust:exact;">
+              <table style="width:100%;border-collapse:collapse;border-top:1px solid #e2e8f1;">
+                <tr>
+                  <td style="padding:5px 12mm;text-align:left;white-space:nowrap;">\
+            © 2026 NTQ Korea · All rights reserved.</td>
+                  <td style="padding:5px 0;text-align:center;font-weight:600;letter-spacing:.1em;\
+            color:#b03a2e;">CONFIDENTIAL</td>
+                  <td style="padding:5px 12mm;text-align:right;white-space:nowrap;">v1.0 · June 2026</td>
+                </tr>
+              </table>
+            </div>""";
 
     private final AppProperties.Pdf config;
     private BlockingQueue<Renderer> pool;
@@ -184,10 +218,12 @@ public class PdfService {
                         .setFormat("A4")
                         .setPrintBackground(true)
                         .setDisplayHeaderFooter(true)
-                        .setHeaderTemplate("<span></span>")
+                        .setHeaderTemplate(HEADER_TEMPLATE)
                         .setFooterTemplate(FOOTER_TEMPLATE)
+                        // Top/bottom margins must leave room for the header/footer bars or Chromium
+                        // clips them; left/right match the 12mm padding inside the templates.
                         .setMargin(new Margin()
-                                .setTop("12mm").setBottom("18mm")
+                                .setTop("22mm").setBottom("18mm")
                                 .setLeft("12mm").setRight("12mm")));
             } finally {
                 context.close();
