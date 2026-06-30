@@ -18,6 +18,23 @@ const EXPORT_BRIDGE =
   "htmlClass:document.documentElement.className," +
   "lang:document.documentElement.getAttribute('lang')||''},'*');}});})();</script>";
 
+/**
+ * In-document anchor handler. An `about:srcdoc` document inherits its base URL from the parent app,
+ * so a table-of-contents link like <a href="#section"> would otherwise resolve against the app URL
+ * and try to navigate the iframe away (404) instead of scrolling. We intercept fragment-only clicks
+ * and scroll within the document, which works even on the opaque-origin sandbox.
+ */
+const ANCHOR_SCROLL =
+  "\n<script>(function(){document.addEventListener('click',function(e){" +
+  "var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a)return;" +
+  "var href=a.getAttribute('href');if(!href||href.charAt(0)!=='#')return;" +
+  "e.preventDefault();var id=href.slice(1);" +
+  "if(!id){window.scrollTo(0,0);return;}" +
+  "try{id=decodeURIComponent(id);}catch(_){}" +
+  "var t=document.getElementById(id);" +
+  "if(!t){try{t=document.querySelector('a[name=\"'+(window.CSS&&CSS.escape?CSS.escape(id):id)+'\"]');}catch(_){}}" +
+  "if(t)t.scrollIntoView({behavior:'smooth'});},true);})();</script>";
+
 export default function Preview({
   content,
   contentType,
@@ -34,7 +51,7 @@ export default function Preview({
       <iframe
         className="preview-iframe"
         sandbox="allow-scripts allow-popups allow-modals allow-forms"
-        srcDoc={content + EXPORT_BRIDGE}
+        srcDoc={content + ANCHOR_SCROLL + EXPORT_BRIDGE}
         title="HTML preview"
       />
     );

@@ -10,6 +10,7 @@ import Preview from "./Preview";
 import ExportMenu from "./ExportMenu";
 import type { DragMode } from "./GrapesEditor";
 import { api, DocumentDetail, Visibility } from "@/lib/api";
+import { copyText } from "@/lib/clipboard";
 
 // GrapesJS touches the DOM and is heavy; load it only when Design mode is opened.
 const GrapesEditor = dynamic(() => import("./GrapesEditor"), { ssr: false });
@@ -24,6 +25,7 @@ export default function Editor({ initial }: { initial: DocumentDetail }) {
   const [visibility, setVisibility] = useState<Visibility>(initial.visibility);
   const [shareSlug, setShareSlug] = useState<string | null>(initial.shareSlug);
   const [saveState, setSaveState] = useState<SaveState>("saved");
+  const [copied, setCopied] = useState(false);
 
   // View mode + resizable split
   const [viewMode, setViewMode] = useState<ViewMode>("split");
@@ -224,12 +226,15 @@ export default function Editor({ initial }: { initial: DocumentDetail }) {
         {shareUrl && (
           <button
             className="btn secondary"
-            onClick={() => {
-              navigator.clipboard?.writeText(shareUrl);
+            onClick={async () => {
+              if (await copyText(shareUrl)) {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              }
             }}
             title={shareUrl}
           >
-            Copy share link
+            {copied ? "✓ Copied" : "Copy share link"}
           </button>
         )}
       </div>

@@ -6,7 +6,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-changeme}
     ports:
-      - "27017:27017"
+      - "17017:27017"
     volumes:
       - mongo_data:/data/db
     healthcheck:
@@ -23,8 +23,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # Web console
+      - "19000:9000"   # S3 API
+      - "19001:9001"   # Web console
     volumes:
       - minio_data:/data
     healthcheck:
@@ -65,26 +65,26 @@ services:
       MINIO_BUCKET: ${MINIO_BUCKET:-documents}
       JWT_SECRET: ${JWT_SECRET:-change-this-to-a-long-random-secret-at-least-32-bytes-long}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://10.0.76.118:13000}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
     ports:
-      - "8080:8080"
+      - "18080:8080"
 
   frontend:
     build:
       context: ./frontend
       args:
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://10.0.76.118:18080}
     restart: unless-stopped
     depends_on:
       - backend
     environment:
-      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080}
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://10.0.76.118:18080}
     ports:
-      - "3000:3000"
+      - "13000:3000"
 
 volumes:
   mongo_data:
